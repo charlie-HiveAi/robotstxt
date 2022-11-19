@@ -157,7 +157,7 @@ impl<'a, Handler: RobotsParseHandler> RobotsTxtParser<'a, Handler> {
                 if (end - start) < max_line_len - 1 {
                     end += char_len_utf8;
                 } else {
-                    skip_exceed += 1;
+                    skip_exceed += char_len_utf8;
                 }
             } else {
                 // Line-ending character char case.
@@ -360,6 +360,8 @@ pub fn escape_pattern(path: &str) -> String {
 mod tests {
     #![allow(unused_variables)]
 
+    use crate::DefaultMatcher;
+    use crate::parse_robotstxt;
     use crate::parser::*;
     use crate::RobotsParseHandler;
 
@@ -429,5 +431,18 @@ mod tests {
         assert_eq!("%AA", &escape_pattern("%aA"));
         assert_eq!("/Sanjos%C3%A9Sellers", &escape_pattern("/SanjoséSellers"));
         assert_eq!("%C3%A1", &escape_pattern("á"));
+    }
+
+    #[test]
+    fn test_unicode_chars() {
+        let mut matcher = DefaultMatcher::default();
+        let response = reqwest::blocking::get("https://www.galleonhome.com/robots.txt").unwrap();
+        let response_body = response.text().unwrap();
+        match response_body.is_empty() {
+            true => {},
+            false => {
+                parse_robotstxt(&response_body, &mut matcher);
+            }
+        }
     }
 }
